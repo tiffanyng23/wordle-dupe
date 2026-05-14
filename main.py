@@ -3,7 +3,7 @@ import sys
 import enchant 
 import random
 from wonderwords import RandomWord
-from wordle import SelectWord, CurrentAttempt, BoxColor, DrawBoxes, GameStatus, WordleAnswer
+from wordle import GameLevel, SelectWord, CurrentAttempt, BoxColor, DrawBoxes, GameStatus, WordleAnswer
 pygame.init() #starts the pygame systems
 
 #screen specs
@@ -28,25 +28,24 @@ box_width = 60
 box_height = 60
 box_shift = 70
 
-# format to display boxes
-cols = 5
-rows = 6
-
 #word dictionary
 d = enchant.Dict("en_US")
 
 #game loop
 def main():
-    # variables
+    # initial variables
     current_guess = ""
     guesses = []
     status = "progress"
     valid_guess = True
     border_width = 0
     wordle_length = 5
+    rows = 6
+    level = 1
 
     # generate random word
     wordle = SelectWord(wordle_length)
+    cols = len(wordle)
 
     run = True
     while run:
@@ -58,12 +57,12 @@ def main():
                 sys.exit()
 
             # enter guess
-            if event.type == pygame.KEYDOWN and len(guesses) < 6 and status == "progress":
+            if event.type == pygame.KEYDOWN and len(guesses) < rows and status == "progress":
                 if event.key == pygame.K_BACKSPACE:
                     current_guess = current_guess[:-1]
                 elif event.key == pygame.K_RETURN:
                     #add user_text to guesses list and clear variable
-                    if len(current_guess) == 5:
+                    if len(current_guess) == len(wordle):
                         #check if guess is a legit word 
                         valid_guess = d.check(current_guess)
                         if valid_guess == True:
@@ -75,7 +74,7 @@ def main():
                         else:
                             border_width = 5
                 else:
-                    if len(current_guess) < 5:
+                    if len(current_guess) < len(wordle):
                         valid_guess = True # as guess is being typed out it remains valid
                         current_guess += event.unicode
 
@@ -85,6 +84,9 @@ def main():
         # assess box colour
         box_colors = BoxColor(wordle, guesses)
 
+        # display game level
+        GameLevel(level)
+
         # draw boxes
         DrawBoxes(rows, cols, guesses, current_guess, box_colors, valid_guess, border_width)
 
@@ -92,6 +94,27 @@ def main():
         CurrentAttempt(wordle, current_guess, guesses, len(guesses))
 
         #display answer if user lost
+        if status == "win": 
+            if level < 4:
+                pygame.time.delay(2000)
+
+                #reset guess variables
+                guesses = []
+                current_guess = ""
+                guess_row=0
+                valid_guess = True
+                border_width = 0
+
+                # increase difficulty
+                level += 1
+                wordle_length += 1
+
+                # generate new word
+                wordle=SelectWord(wordle_length)
+                cols = len(wordle)
+
+                status = "progress"
+                
         if status == "lose":
             pygame.time.delay(1000)
             WordleAnswer(wordle)

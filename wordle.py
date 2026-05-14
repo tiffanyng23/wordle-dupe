@@ -27,14 +27,16 @@ box_width = 60
 box_height = 60
 box_shift = 70
 
-# format to display boxes
-cols = 5
-rows = 6
-
 #word dictionary
 d = enchant.Dict("en_US")
 
 #game logic
+def GameLevel(level_num):
+    '''returns title depicting game level'''
+    level_surface = font.render(f"Level {level_num}", True, (0,0,0))
+    level_rect = level_surface.get_rect(center=(width/2, height/12))
+    screen.blit(level_surface, level_rect)
+
 def SelectWord(num_letters):
     '''randomnly generates a word of a customizable length'''
     r = RandomWord()
@@ -140,8 +142,13 @@ def DrawBoxes(num_rows, num_cols, all_guesses, current_guess, box_colors, valid_
         for col in range(num_cols):
             if row < len(all_guesses):
                 guess = all_guesses[row]
-                final_color = box_colors[guess][col]
+            
+                if col < len(box_colors[guess]):
+                    final_color = box_colors[guess][col]
+                else: # when level increases, column count increases
+                    final_color = beige 
             else:
+                #indicates rows that have no previous or active guesses yet
                 final_color  = beige
 
             #draw boxes onto screen
@@ -154,7 +161,7 @@ def DrawBoxes(num_rows, num_cols, all_guesses, current_guess, box_colors, valid_
             # if current guess isn't a valid word --> make boxes of that row have a red border
             # if its not a valid guess, the row number and all guesses will be the same
             # e.g. 3 legit words but 4th word is not legit --> len(all_guesses) = 3 and row index = 3
-            if row == len(all_guesses) and len(current_guess) ==5 and valid_guess == False:
+            if row == len(all_guesses) and len(current_guess) == num_cols and valid_guess == False:
                 final_color = red
                 pygame.draw.rect(screen, red, 
                     ((width/2 - num_cols/2 * box_shift) + (col * box_shift), 
