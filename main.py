@@ -81,11 +81,11 @@ def main():
         # background colour
         screen.fill(lavender)
 
-        # assess box colour
-        box_colors = BoxColor(wordle, guesses)
-
         # display game level
         GameLevel(level)
+
+        # assess box colour
+        box_colors = BoxColor(wordle, guesses)
 
         # draw boxes
         DrawBoxes(rows, cols, guesses, current_guess, box_colors, valid_guess, border_width)
@@ -93,9 +93,11 @@ def main():
         # draw letter in box
         CurrentAttempt(wordle, current_guess, guesses, len(guesses))
 
-        #display answer if user lost
+        # if user gets correct answer, move to next round
         if status == "win": 
             if level < 4:
+                #display screen with correct answer for 2 seconds
+                pygame.display.flip()
                 pygame.time.delay(2000)
 
                 #reset guess variables
@@ -114,7 +116,8 @@ def main():
                 cols = len(wordle)
 
                 status = "progress"
-                
+        
+        #display answer if user lost
         if status == "lose":
             pygame.time.delay(1000)
             WordleAnswer(wordle)

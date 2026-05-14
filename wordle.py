@@ -179,6 +179,7 @@ def GameStatus(current_guess, all_guesses, wordle):
 
 def WordleAnswer(wordle):
     '''displays answer if user cannot get the wordle'''
+
     #create surface of wordle text
     wordle = wordle.upper()
     wordle_surface = font.render(wordle, True, (0,0,0))
