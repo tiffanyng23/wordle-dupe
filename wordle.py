@@ -31,18 +31,18 @@ box_shift = 70
 d = enchant.Dict("en_US")
 
 #game logic
-def GameLevel(level_num):
+def game_level(level_num):
     '''returns title depicting game level'''
     level_surface = font.render(f"Level {level_num}", True, (0,0,0))
     level_rect = level_surface.get_rect(center=(width/2, height/12))
     screen.blit(level_surface, level_rect)
 
-def SelectWord(num_letters):
+def select_word(num_letters):
     '''randomnly generates a word of a customizable length'''
     r = RandomWord()
     return r.word(word_min_length=num_letters, word_max_length=num_letters)
 
-def CurrentAttempt(wordle, current_guess, all_guesses, guess_row):
+def current_attempt(wordle, current_guess, all_guesses, guess_row):
     '''user can type guess and it will populate the boxes on display'''
 
     #always 6 guesses so rows will be 6, cols will depend on word length
@@ -96,7 +96,7 @@ def CurrentAttempt(wordle, current_guess, all_guesses, guess_row):
         #blit letter
         screen.blit(letter_surface, letter_rect)
 
-def BoxColor(wordle, all_guesses):
+def box_fill(wordle, all_guesses):
     '''determine which letters in guess are green or yellow'''
     
     # store box colours
@@ -135,7 +135,7 @@ def BoxColor(wordle, all_guesses):
 
     return box_colors
 
-def DrawBoxes(num_rows, num_cols, all_guesses, current_guess, box_colors, valid_guess, border_width):
+def draw_boxes(num_rows, num_cols, all_guesses, current_guess, box_colors, valid_guess, border_width):
     '''draw boxes onto display'''
     # go through each box and apply the correct colour
     for row in range(num_rows):
@@ -168,7 +168,7 @@ def DrawBoxes(num_rows, num_cols, all_guesses, current_guess, box_colors, valid_
                     (height/2 - num_rows/2 * box_shift) + (row * box_shift), 
                     box_width, box_height), border_width)
       
-def GameStatus(current_guess, all_guesses, wordle):
+def game_status(current_guess, all_guesses, wordle):
     '''determine users game status'''
     if current_guess == wordle:
         return "win"
@@ -177,7 +177,7 @@ def GameStatus(current_guess, all_guesses, wordle):
     else:
         return "progress"
 
-def WordleAnswer(wordle):
+def wordle_answer(wordle):
     '''displays answer if user cannot get the wordle'''
 
     #create surface of wordle text
@@ -196,5 +196,5 @@ def WordleAnswer(wordle):
     screen.blit(wordle_surface, wordle_rect)
 
 if __name__ == "__main__":
-    wordle = SelectWord(5)
+    wordle = select_word(5)
     print(wordle)

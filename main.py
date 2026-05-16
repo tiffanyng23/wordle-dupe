@@ -3,7 +3,7 @@ import sys
 import enchant 
 import random
 from wonderwords import RandomWord
-from wordle import GameLevel, SelectWord, CurrentAttempt, BoxColor, DrawBoxes, GameStatus, WordleAnswer
+from wordle import game_level, select_word, current_attempt, box_fill, draw_boxes, game_status, wordle_answer
 pygame.init() #starts the pygame systems
 
 #screen specs
@@ -44,7 +44,7 @@ def main():
     level = 1
 
     # generate random word
-    wordle = SelectWord(wordle_length)
+    wordle = select_word(wordle_length)
     cols = len(wordle)
 
     run = True
@@ -68,7 +68,7 @@ def main():
                         if valid_guess == True:
                             guesses.append(current_guess)
                             #check game status by comparing guess with wordle
-                            status = GameStatus(current_guess, guesses, wordle)
+                            status = game_status(current_guess, guesses, wordle)
                             #reset current guess
                             current_guess = ""
                         else:
@@ -82,16 +82,16 @@ def main():
         screen.fill(lavender)
 
         # display game level
-        GameLevel(level)
+        game_level(level)
 
         # assess box colour
-        box_colors = BoxColor(wordle, guesses)
+        box_colors = box_fill(wordle, guesses)
 
         # draw boxes
-        DrawBoxes(rows, cols, guesses, current_guess, box_colors, valid_guess, border_width)
+        draw_boxes(rows, cols, guesses, current_guess, box_colors, valid_guess, border_width)
 
         # draw letter in box
-        CurrentAttempt(wordle, current_guess, guesses, len(guesses))
+        current_attempt(wordle, current_guess, guesses, len(guesses))
 
         # if user gets correct answer, move to next round
         if status == "win": 
@@ -112,7 +112,7 @@ def main():
                 wordle_length += 1
 
                 # generate new word
-                wordle=SelectWord(wordle_length)
+                wordle=select_word(wordle_length)
                 cols = len(wordle)
 
                 status = "progress"
@@ -120,7 +120,7 @@ def main():
         #display answer if user lost
         if status == "lose":
             pygame.time.delay(1000)
-            WordleAnswer(wordle)
+            wordle_answer(wordle)
 
         pygame.display.flip()
 
