@@ -1,0 +1,17 @@
+import enchant 
+
+WIDTH = 600
+HEIGHT =600
+SIZE = WIDTH, HEIGHT
+
+#colour scheme
+LAVENDER = 181, 163, 207
+BEIGE = 232, 230, 216
+GREEN = 173, 217, 173
+YELLOW = 247, 239, 163
+RED = 196, 96, 96
+
+# box dimensions
+BOX_WIDTH = 60
+BOX_HEIGHT = 60
+BOX_SHIFT = 70
