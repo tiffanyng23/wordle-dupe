@@ -1,45 +1,75 @@
 import enchant 
 import pygame
 from wonderwords import RandomWord
-from constants import LAVENDER, BEIGE, GREEN, YELLOW, RED, BOX_HEIGHT, BOX_SHIFT, BOX_WIDTH, WIDTH, HEIGHT
+from constants import LAVENDER, BEIGE, GREEN, YELLOW, RED, BOX_HEIGHT, BOX_SHIFT, BOX_WIDTH, WIDTH, HEIGHT, BORDER_WIDTH, ROWS
 
 #word dictionary
-d = enchant.Dict("en_US")
+dictionary = enchant.Dict("en_US")
 
 #game logic
-def game_level(screen, font, level_num, width, height):
-    '''returns title depicting game level'''
-    level_surface = font.render(f"Level {level_num}", True, (0,0,0))
-    level_rect = level_surface.get_rect(center=(WIDTH/2, HEIGHT/12))
-    screen.blit(level_surface, level_rect)
+class Wordle:
+    def __init__(self):
+        #variables at the start of the game
+        self.wordle_length = 5
+        self.current_guess = ""
+        self.all_guesses = []
+        self.status = "progress"
+        self.valid_guess = True
+        self.level = 1
+        self.win_time = None
 
-def select_word(num_letters):
-    '''randomnly generates a word of a customizable length'''
-    r = RandomWord()
-    return r.word(word_min_length=num_letters, word_max_length=num_letters)
+        # generate random word and store in variable
+        self.wordle = self.select_word()
 
-def current_attempt(screen, font, wordle, current_guess, all_guesses, guess_row):
-    '''user can type guess and it will populate the boxes on display'''
+    def select_word(self):
+        '''randomnly generates a word of a customizable length'''
+        r = RandomWord()
+        return r.word(word_min_length=self.wordle_length, word_max_length=self.wordle_length)
 
-    #always 6 guesses so rows will be 6, cols will depend on word length
-    rows = 6
-    cols = len(wordle) # length of word = num columns
-    col_count = 0
-    row_count = 0
+    def current_attempt(self, screen, font):
+        '''user can type guess and it will populate the boxes on display'''
 
-    # loop through previous guesses
-    for guess in all_guesses:
+        #always 6 guesses so rows will be 6, cols will depend on word length
+        cols = len(self.wordle) # length of current wordle = num columns
+        col_count = 0
+        row_count = 0
 
-        guess = guess.upper()
+        # loop through previous guesses
+        for guess in self.all_guesses:
 
-        for letter in guess:
+            guess = guess.upper()
+
+            for letter in guess:
+                #create surface of letter
+                letter_surface = font.render(letter, True, (0,0,0))
+
+                # get coordinates of the centre of each box
+                # middle of display - half num of cols * box shift  + half of one box + shift based on col
+                center_x = (WIDTH/2 - cols/2 * BOX_SHIFT) + BOX_WIDTH/2 + (col_count * BOX_SHIFT)
+                center_y = (HEIGHT/2 - ROWS/2 * BOX_SHIFT) + BOX_HEIGHT/2 + (row_count * BOX_SHIFT)
+
+                col_count += 1
+
+                # use get rect to centre each letter_surface at the centre of each box 
+                letter_rect = letter_surface.get_rect(center=(center_x, center_y))
+
+                #blit letter
+                screen.blit(letter_surface, letter_rect)
+                    
+            col_count = 0 #reset column count to 0
+            row_count += 1 #row count increase by 1
+
+        # draw active guess
+        active_guess = self.current_guess.upper()
+
+        for letter in active_guess:
             #create surface of letter
             letter_surface = font.render(letter, True, (0,0,0))
 
             # get coordinates of the centre of each box
             # middle of display - half num of cols * box shift  + half of one box + shift based on col
             center_x = (WIDTH/2 - cols/2 * BOX_SHIFT) + BOX_WIDTH/2 + (col_count * BOX_SHIFT)
-            center_y = (HEIGHT/2 - rows/2 * BOX_SHIFT) + BOX_HEIGHT/2 + (row_count * BOX_SHIFT)
+            center_y = (HEIGHT/2 - ROWS/2 * BOX_SHIFT) + BOX_HEIGHT/2 + (len(self.all_guesses) * BOX_SHIFT)
 
             col_count += 1
 
@@ -48,129 +78,128 @@ def current_attempt(screen, font, wordle, current_guess, all_guesses, guess_row)
 
             #blit letter
             screen.blit(letter_surface, letter_rect)
+
+    def box_fill(self):
+        '''determine which letters in guess are green or yellow'''
+        
+        # store box colours
+        box_colors = []
+
+        # go through each guess and each letter to determine box colour
+        for guess in self.all_guesses:
+            # length of colour list will be the same as word length of guess 
+            # create list to store colours for each letter in the guess, then add this list into the box_colors
+            colors = [None] * len(guess) 
+            remaining_letters = list(self.wordle) #convert wordle to a list of letters 
+
+            # check each letter in each guess against each letter in wordle
+            for i, letter in enumerate(guess):
+                # correct letter in correct spot
+                if letter == self.wordle[i]:
+                    # store colour for letter
+                    colors[i] = GREEN
+
+                    #remove from remaining letters
+                    remaining_letters[i] = None
+
+            # check for yellow and beige boxes
+            for i, letter in enumerate(guess):
+                if colors[i] == GREEN:
+                    continue
                 
-        col_count = 0 #reset column count to 0
-        row_count += 1 #row count increase by 1
+                # if letter is still in word
+                if letter in remaining_letters:
+                    colors[i] = YELLOW
+                    # remove letter from remaining letters
+                    # get index of letter in remaining letters to remove it
+                    remaining_letters[remaining_letters.index(letter)] = None
+                else:
+                    colors[i] = BEIGE
 
-    # draw active guess
-    current_guess = current_guess.upper()
+            #update box_colors with colour for that letter guess
+            box_colors.append(colors)
 
-    for letter in current_guess:
-        #create surface of letter
-        letter_surface = font.render(letter, True, (0,0,0))
+        return box_colors
 
-        # get coordinates of the centre of each box
-        # middle of display - half num of cols * box shift  + half of one box + shift based on col
-        center_x = (WIDTH/2 - cols/2 * BOX_SHIFT) + BOX_WIDTH/2 + (col_count * BOX_SHIFT)
-        center_y = (HEIGHT/2 - rows/2 * BOX_SHIFT) + BOX_HEIGHT/2 + (guess_row * BOX_SHIFT)
+    def draw_boxes(self, screen, box_colors):
+        '''draw boxes onto display'''
+        num_cols = len(self.wordle)
+        # go through each box and apply the correct colour
+        for row in range(ROWS):
+            for col in range(num_cols):
+                if row < len(self.all_guesses):
+                    guess = self.all_guesses[row]
+                    final_color = box_colors[row][col]
+                else:
+                    #indicates rows that have no previous or active guesses yet
+                    final_color  = BEIGE
 
-        col_count += 1
-
-        # use get rect to centre each letter_surface at the centre of each box 
-        letter_rect = letter_surface.get_rect(center=(center_x, center_y))
-
-        #blit letter
-        screen.blit(letter_surface, letter_rect)
-
-def box_fill(wordle, all_guesses):
-    '''determine which letters in guess are green or yellow'''
-    
-    # store box colours
-    box_colors = {}
-
-    # go through each guess and each letter to determine box colour
-    for guess in all_guesses:
-        colors = [None] * len(guess) # create list to store colours for each guess
-        remaining_letters = list(wordle) #convert wordle to a list of letters 
-
-        for i, letter in enumerate(guess):
-            # check each letter in each guess for green boxes
-            if letter == wordle[i]:
-                # store colour for letter
-                colors[i] = GREEN
-
-                #remove from remaining letters
-                remaining_letters[i] = None
-
-        # check for yellow and beige boxes
-        for i, letter in enumerate(guess):
-            if colors[i] == GREEN:
-                continue
-            
-            # if letter is still in word
-            if letter in remaining_letters:
-                colors[i] = YELLOW
-                # remove letter from remaining letters
-                # get index of letter in remaining letters to remove it
-                remaining_letters[remaining_letters.index(letter)] = None
-            else:
-                colors[i] = BEIGE
-
-        #update box_colors with colours for that guess
-        box_colors[guess] = colors
-
-    return box_colors
-
-def draw_boxes(screen, num_rows, num_cols, all_guesses, current_guess, box_colors, valid_guess, border_width):
-    '''draw boxes onto display'''
-    # go through each box and apply the correct colour
-    for row in range(num_rows):
-        for col in range(num_cols):
-            if row < len(all_guesses):
-                guess = all_guesses[row]
-            
-                if col < len(box_colors[guess]):
-                    final_color = box_colors[guess][col]
-                else: # when level increases, column count increases
-                    final_color = BEIGE
-            else:
-                #indicates rows that have no previous or active guesses yet
-                final_color  = BEIGE
-
-            #draw boxes onto screen
-            pygame.draw.rect(screen, final_color, 
-                ((WIDTH/2 - num_cols/2 * BOX_SHIFT) + (col * BOX_SHIFT), 
-                (HEIGHT/2 - num_rows/2 * BOX_SHIFT) + (row * BOX_SHIFT), 
-                BOX_WIDTH, BOX_HEIGHT))
-            
-            #invalid word red border
-            # if current guess isn't a valid word --> make boxes of that row have a red border
-            # if its not a valid guess, the row number and all guesses will be the same
-            # e.g. 3 legit words but 4th word is not legit --> len(all_guesses) = 3 and row index = 3
-            if row == len(all_guesses) and len(current_guess) == num_cols and valid_guess == False:
-                final_color = RED
-                pygame.draw.rect(screen, RED, 
+                #draw boxes onto screen
+                pygame.draw.rect(screen, final_color, 
                     ((WIDTH/2 - num_cols/2 * BOX_SHIFT) + (col * BOX_SHIFT), 
-                    (HEIGHT/2 - num_rows/2 * BOX_SHIFT) + (row * BOX_SHIFT), 
-                    BOX_WIDTH, BOX_HEIGHT), border_width)
-      
-def game_status(current_guess, all_guesses, wordle):
-    '''determine users game status'''
-    if current_guess == wordle:
-        return "win"
-    elif len(all_guesses) == 6:
-        return "lose"
-    else:
-        return "progress"
+                    (HEIGHT/2 - ROWS/2 * BOX_SHIFT) + (row * BOX_SHIFT), 
+                    BOX_WIDTH, BOX_HEIGHT))
+                
+                #invalid word red border
+                # if current guess isn't a valid word --> make boxes of that row have a red border
+                # if its not a valid guess, the row number and all guesses will be the same
+                # e.g. 3 legit words but 4th word is not legit --> len(all_guesses) = 3 and row index = 3
+                if row == len(self.all_guesses) and len(self.current_guess) == num_cols and self.valid_guess == False:
+                    final_color = RED
+                    pygame.draw.rect(screen, RED, 
+                        ((WIDTH/2 - num_cols/2 * BOX_SHIFT) + (col * BOX_SHIFT), 
+                        (HEIGHT/2 - ROWS/2 * BOX_SHIFT) + (row * BOX_SHIFT), 
+                        BOX_WIDTH, BOX_HEIGHT), BORDER_WIDTH)
+    
+    def game_level(self, screen, font):
+        '''returns title depicting game level'''
+        level_surface = font.render(f"Level {self.level}", True, (0,0,0))
+        level_rect = level_surface.get_rect(center=(WIDTH/2, HEIGHT/12))
+        screen.blit(level_surface, level_rect)
+        
+    def game_status(self):
+        '''determine users game status based on each current and complete guess'''
+        if self.current_guess == self.wordle:
+            # start timer to show wordle for 2000ms
+            self.win_time = pygame.time.get_ticks()
+            self.status = "win"
+        elif len(self.all_guesses) == 6:
+            self.status = "lose"
+        else:
+            self.status = "progress"
+            
 
-def wordle_answer(screen, font, wordle):
-    '''displays answer if user cannot get the wordle'''
+    def next_level(self):
+        '''configure variables for the next level'''
+        #reset guess variables
+        self.all_guesses = []
+        self.current_guess = ""
+        self.valid_guess = True
 
-    #create surface of wordle text
-    wordle = wordle.upper()
-    wordle_surface = font.render(wordle, True, (0,0,0))
+        # increase difficulty
+        self.level += 1
+        self.wordle_length += 1
 
-    # get coordinates of the centre of popup box
-    center_x = WIDTH/2
-    center_y = HEIGHT/2
+        # generate new wordle 
+        self.wordle = self.select_word()
 
-    #get rect to get rectangular coordinates
-    wordle_rect = wordle_surface.get_rect(center=(center_x, center_y))
+        #reset status
+        self.status = "progress"
 
-    #blit word
-    screen.fill(LAVENDER)
-    screen.blit(wordle_surface, wordle_rect)
+    def wordle_answer(self, screen, font):
+        '''displays answer if user cannot get the wordle'''
 
-if __name__ == "__main__":
-    wordle = select_word(5)
-    print(wordle)
+        #create surface of wordle text
+        answer = self.wordle.upper()
+        wordle_surface = font.render(answer, True, (0,0,0))
+
+        # get coordinates of the centre of popup box
+        center_x = WIDTH/2
+        center_y = HEIGHT/2
+
+        #get rect to get rectangular coordinates
+        wordle_rect = wordle_surface.get_rect(center=(center_x, center_y))
+
+        #blit word
+        screen.fill(LAVENDER)
+        screen.blit(wordle_surface, wordle_rect)

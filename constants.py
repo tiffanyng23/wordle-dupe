@@ -15,3 +15,7 @@ RED = 196, 96, 96
 BOX_WIDTH = 60
 BOX_HEIGHT = 60
 BOX_SHIFT = 70
+
+# game variables
+BORDER_WIDTH = 0
+ROWS = 6
